@@ -19,6 +19,10 @@ func main() {
 	api := r.Group("/api")
 	{
 		api.POST("/recommendations", handlers.GetRecommendations)
+		api.POST("/playlists", handlers.CreatePlaylist) // Create playlist
+		api.GET("/playlists", handlers.GetPlaylists)
+		api.GET("/playlists/:id", handlers.GetSinglePlaylist)
+
 	}
 
 	r.Run() // listen and serve on 0.0.0.0:8080

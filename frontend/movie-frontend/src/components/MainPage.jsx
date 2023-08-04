@@ -3,6 +3,7 @@ import Prompt from './Prompt';
 import Suggestion from './Suggestion';
 import Movie from './Movie';
 import axios from 'axios';
+import { Button } from '@material-ui/core';
 
 const movies_list = [
     {
@@ -31,10 +32,6 @@ function MainPage() {
         setPromptValue(event.target.value);
     };
 
-    // useEffect(() => {
-    //     setMovies(movies_list)
-    // });
-
     const handlePromptSubmit = async () => {
         setIsLoading(true);
 
@@ -48,6 +45,14 @@ function MainPage() {
         setIsLoading(false);
     };
 
+    const handleSharePlaylist = async () => {
+        try {
+            await axios.post('http://localhost:8080/api/playlists', { name: promptValue, movies });
+        } catch (error) {
+            console.error('Error sharing playlist:', error);
+        }
+    };
+
     const handleSuggestionClick = (suggestion) => {
         setPromptValue(suggestion);
         // handlePromptSubmit();
@@ -58,6 +63,9 @@ function MainPage() {
             <Suggestion onSuggestionClick={handleSuggestionClick} disabled={isLoading} />
             <Prompt onSubmit={handlePromptSubmit} disabled={isLoading} inputValue={promptValue} onInputChange={handleInputChange} >
             </Prompt>
+            <Button variant="contained" color="primary" onClick={handleSharePlaylist} disabled={isLoading}>
+                Share your playlist
+            </Button>
             {isLoading ? (
                 <div>Loading...</div>
             ) : (
