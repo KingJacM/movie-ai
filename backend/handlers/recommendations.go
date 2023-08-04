@@ -1,15 +1,15 @@
 package handlers
 
 import (
-	"context"
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
-	"strings"
-
-	"movie-recommendations/types"
+	"os"
 
 	"github.com/gin-gonic/gin"
-	openai "github.com/sashabaranov/go-openai"
+	"github.com/joho/godotenv"
 )
 
 type Movie struct {
@@ -18,56 +18,101 @@ type Movie struct {
 	Link        string `json:"link"`
 }
 
-func GetRecommendations(c *gin.Context) {
-	var request types.RecommendationRequest
+type MovieResponse struct {
+	Movies []Movie `json:"movies"`
+}
 
+type RecommendationRequest struct {
+	Prompt string `json:"prompt"`
+}
+
+type OpenAIResponse struct {
+	Choices []struct {
+		Message struct {
+			Content string `json:"content"`
+		} `json:"message"`
+	} `json:"choices"`
+}
+
+func GetRecommendations(c *gin.Context) {
+	var request RecommendationRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Append your request with specific instructions
-	request.Prompt += " Please provide 9 recommendations in the following format: 'title: movie title, description: movie description and reason it matches my request, link: movie link'."
+	request.Prompt += " Please provide 9 recommendations in the list of json format, in which each object has: 'title: movie title, description: movie description and reason it matches my request, link: movie link'."
 
-	client := openai.NewClient("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")
-
-	resp, err := client.CreateChatCompletion(
-		context.Background(),
-		openai.ChatCompletionRequest{
-			Model: openai.GPT3Dot5Turbo,
-			Messages: []openai.ChatCompletionMessage{
-				{
-					Role:    openai.ChatMessageRoleUser,
-					Content: request.Prompt,
-				},
+	reqBody := map[string]interface{}{
+		"model": "gpt-3.5-turbo",
+		"messages": []map[string]string{
+			{
+				"role":    "system",
+				"content": "You are a helpful assistant.",
+			},
+			{
+				"role":    "user",
+				"content": request.Prompt,
 			},
 		},
-	)
-
+	}
+	reqBytes, err := json.Marshal(reqBody)
 	if err != nil {
-		fmt.Printf("ChatCompletion error: %v\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating request to OpenAI."})
+		return
+	}
+
+	req, err := http.NewRequest("POST", "https://api.openai-proxy.com/v1/chat/completions", bytes.NewBuffer(reqBytes))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating request to OpenAI."})
+		return
+	}
+
+	er := godotenv.Load()
+	if er != nil {
+		fmt.Println("Error loading .env file")
+	}
+
+	apiKey := os.Getenv("API_KEY")
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", apiKey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Printf("%v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error getting recommendation."})
 		return
 	}
+	defer resp.Body.Close()
 
-	if len(resp.Choices) == 0 || resp.Choices[0].Message.Content == "" {
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error reading response from OpenAI."})
+		return
+	}
+
+	var aiResp OpenAIResponse
+	err = json.Unmarshal(body, &aiResp)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error parsing response from OpenAI."})
+		return
+	}
+	fmt.Printf("%v", aiResp.Choices)
+	if len(aiResp.Choices) == 0 || aiResp.Choices[0].Message.Content == "" {
+		fmt.Printf("%v", aiResp.Choices)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "No recommendation found."})
 		return
 	}
-	// Split the returned content by comma
-	parts := strings.Split(resp.Choices[0].Message.Content, ",")
 
-	if len(parts) != 3 {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid recommendation format."})
+	// As OpenAI returns stringified JSON in response, unmarshal it into the appropriate structure
+	var movieResponse MovieResponse
+	err = json.Unmarshal([]byte(aiResp.Choices[0].Message.Content), &movieResponse)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error parsing movie data."})
 		return
 	}
 
-	// Extract the movie information
-	movie := Movie{
-		Title:       strings.TrimPrefix(strings.TrimSpace(parts[0]), "title:"),
-		Description: strings.TrimPrefix(strings.TrimSpace(parts[1]), "description:"),
-		Link:        strings.TrimPrefix(strings.TrimSpace(parts[2]), "link:"),
-	}
-
-	c.JSON(http.StatusOK, movie)
+	c.JSON(http.StatusOK, movieResponse)
 }
