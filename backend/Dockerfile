@@ -7,14 +7,11 @@ WORKDIR /go/src/app
 # Copy the current directory contents into the container
 COPY . .
 
-# Download all dependencies
-RUN go get -d -v ./...
-
-# Install the app
-RUN go install -v ./...
+# Build the Go application
+RUN go build -o app .
 
 # Make port 8080 available to the world outside this container
 EXPOSE 8080
 
 # Run the app
-CMD ["app"]
+CMD ["./app"]

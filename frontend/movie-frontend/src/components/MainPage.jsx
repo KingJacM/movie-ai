@@ -21,7 +21,7 @@ function MainPage() {
         setIsLoading(true);
     
         try {
-            const response = await axios.post('http://localhost:8080/api/recommendations', { prompt: promptValue });
+            const response = await axios.post('https://ai-movie-recommendation-app.azurewebsites.net/api/recommendations', { prompt: promptValue });
             if (response.data.error) {
                 throw new Error(response.data.error);
             }
