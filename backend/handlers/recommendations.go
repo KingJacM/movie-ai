@@ -37,11 +37,12 @@ type OpenAIResponse struct {
 func GetRecommendations(c *gin.Context) {
 	var request RecommendationRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
+		fmt.Println("Error binding JSON:", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	request.Prompt += " Please provide 9 recommendations in the list of json format, in which each object has: 'title: movie title, description: movie description with reason why it matches my request, link: movie link'. Do not return anything else other than json(not in code snippet)"
+	request.Prompt += " Please provide 9 recommendations in the list of json format, in which each object has: 'title: movie title, description: movie description with reason why it matches my request, link: movie link'. Do not return anything else other than json an do not return in code snippet)"
 
 	reqBody := map[string]interface{}{
 		"model": "gpt-3.5-turbo",
@@ -58,12 +59,14 @@ func GetRecommendations(c *gin.Context) {
 	}
 	reqBytes, err := json.Marshal(reqBody)
 	if err != nil {
+		fmt.Println("Error creating request to OpenAI:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating request to OpenAI."})
 		return
 	}
 
 	req, err := http.NewRequest("POST", "https://api.openai-proxy.com/v1/chat/completions", bytes.NewBuffer(reqBytes))
 	if err != nil {
+		fmt.Println("Error creating request to OpenAI:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating request to OpenAI."})
 		return
 	}
@@ -89,6 +92,7 @@ func GetRecommendations(c *gin.Context) {
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		fmt.Printf("%v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error reading response from OpenAI."})
 		return
 	}
@@ -96,7 +100,8 @@ func GetRecommendations(c *gin.Context) {
 	var aiResp OpenAIResponse
 	err = json.Unmarshal(body, &aiResp)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error parsing response from OpenAI."})
+		fmt.Printf("%v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error parsing response from OpenAI. It could be because GPT has returned unexpected content, please try again or see console for more details", "content": aiResp.Choices})
 		return
 	}
 	fmt.Printf("%v", aiResp.Choices)
@@ -110,7 +115,8 @@ func GetRecommendations(c *gin.Context) {
 	var movieResponse MovieResponse
 	err = json.Unmarshal([]byte(aiResp.Choices[0].Message.Content), &movieResponse)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error parsing movie data."})
+		fmt.Printf("%v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error parsing movie data. It could be because GPT has returned unexpected content, please try again or see console for more details", "content": aiResp.Choices})
 		return
 	}
 
