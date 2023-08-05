@@ -19,7 +19,7 @@ function MainPage() {
 
     const handlePromptSubmit = async () => {
         setIsLoading(true);
-
+    
         try {
             const response = await axios.post('http://localhost:8080/api/recommendations', { prompt: promptValue });
             if (response.data.error) {
@@ -27,6 +27,7 @@ function MainPage() {
             }
             setMovies(response.data.movies);
         } catch (error) {
+            console.log(error)
             if (error.response) {
                 setErrorMessage(error.response.data.error);
                 if (error.response.data.content) {
@@ -35,24 +36,27 @@ function MainPage() {
             } else {
                 setErrorMessage(error.message);
             }
+            setSnackbarOpen(true); // Show the Snackbar when there's an error
         } finally {
             setIsLoading(false);
         }
     };
+    
 
     const handleSharePlaylist = async () => {
         try {
+            setShared(true)
             const response = await axios.post('http://localhost:8080/api/playlists', { name: promptValue, movies });
             if (response.data.error) {
                 throw new Error(response.data.error);
             }
-            setShared(true)
         } catch (error) {
             if (error.response) {
                 setErrorMessage(error.response.data.error);
             } else {
                 setErrorMessage(error.message);
             }
+            setSnackbarOpen(true); // Show the Snackbar when there's an error
         }
     };
 
@@ -63,6 +67,7 @@ function MainPage() {
 
     const handleCloseSnackbar = () => {
         setErrorMessage("");
+        setSnackbarOpen(false); // <-- Add this line
     };
 
     return (
@@ -98,6 +103,10 @@ function MainPage() {
                         Close
                     </Button>
                 ]}
+                anchorOrigin={{
+                    vertical: 'top',
+                    horizontal: 'center',
+                }}
             />
         </div>
     );

@@ -3,6 +3,7 @@ package db
 import (
 	"fmt"
 	"movie-recommendations/models"
+	"net/url"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -10,25 +11,31 @@ import (
 	"gorm.io/gorm"
 )
 
+var DB *gorm.DB
+
 func ConnectDB() (*gorm.DB, error) {
 	er := godotenv.Load()
 	if er != nil {
 		fmt.Println("Error loading .env file")
 	}
 
-	host := os.Getenv("HOST")
-	user := os.Getenv("USER")
-	dbname := os.Getenv("DBNAME")
-	password := os.Getenv("PASSWORD")
-
-	dsn := fmt.Sprintf("host=%s user=%s dbname=%s password=%s sslmode=disable", host, user, dbname, password)
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-
+	connectionURL := os.Getenv("DATABASE_URL") // Assuming DATABASE_URL is the name of your env variable containing the URL
+	parsedURL, err := url.Parse(connectionURL)
 	if err != nil {
 		return nil, err
 	}
 
-	db.AutoMigrate(&models.Playlist{}, &models.Movie{})
+	password, _ := parsedURL.User.Password()
+	host := parsedURL.Hostname()
+	user := parsedURL.User.Username()
+	dbname := parsedURL.Path[1:] // Trim the leading "/"
 
-	return db, nil
+	dsn := fmt.Sprintf("host=%s user=%s dbname=%s password=%s sslmode=require", host, user, dbname, password)
+	var connectionErr error
+	DB, connectionErr = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if connectionErr != nil {
+		return DB, connectionErr
+	}
+	DB.AutoMigrate(&models.Playlist{}, &models.Movie{})
+	return DB, nil
 }
