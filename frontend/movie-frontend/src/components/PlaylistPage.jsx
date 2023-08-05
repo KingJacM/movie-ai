@@ -27,7 +27,7 @@ function PlaylistPage() {
   useEffect(() => {
     const fetchPlaylists = async () => {
       try {
-        const response = await axios.get('http://localhost:8080/api/playlists');
+        const response = await axios.get('https://ai-movie-recommendation-app.azurewebsites.net/api/playlists');
         setPlaylists(response.data.data);
       } catch (error) {
         console.error('Error fetching playlists:', error);

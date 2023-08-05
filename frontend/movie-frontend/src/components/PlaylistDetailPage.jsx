@@ -11,7 +11,7 @@ function PlaylistDetailPage() {
   useEffect(() => {
     const fetchPlaylist = async () => {
       try {
-        const response = await axios.get(`http://localhost:8080/api/playlists/${id}`);
+        const response = await axios.get(`https://ai-movie-recommendation-app.azurewebsites.net/api/playlists/${id}`);
         console.log("movies",response.data)
         setPlaylist(response.data.data);
       } catch (error) {
