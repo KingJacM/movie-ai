@@ -42,7 +42,7 @@ func GetRecommendations(c *gin.Context) {
 		return
 	}
 
-	request.Prompt += " Please provide 9 recommendations in the list of json format, in which each object has: 'title: movie title, description: movie description with reason why it matches my request, link: movie link'. Do not return anything else other than json an do not return in code snippet)"
+	request.Prompt += ". Please provide 9 recommendations in the list of json format, 'movies': [objects], in which each object has: 'title: movie title, description: movie description with reason why it matches my request, link: movie link'. Do not return anything else other than json an do not return in code snippet)"
 
 	reqBody := map[string]interface{}{
 		"model": "gpt-3.5-turbo",
