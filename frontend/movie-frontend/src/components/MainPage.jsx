@@ -46,7 +46,7 @@ function MainPage() {
     const handleSharePlaylist = async () => {
         try {
             setShared(true)
-            const response = await axios.post('http://ai-movie-recommendation-app.azurewebsites.net/api/playlists', { name: promptValue, movies });
+            const response = await axios.post('https://ai-movie-recommendation-app.azurewebsites.net/api/playlists', { name: promptValue, movies });
             if (response.data.error) {
                 throw new Error(response.data.error);
             }
