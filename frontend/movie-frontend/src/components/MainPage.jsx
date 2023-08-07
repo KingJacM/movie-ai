@@ -25,13 +25,20 @@ function MainPage() {
             if (response.data.error) {
                 throw new Error(response.data.error);
             }
-            setMovies(response.data.movies);
+            try{
+                setMovies(response.data.movies);
+            } catch{
+                setErrorMessage("Data recieved but failed to render");
+                console.log("Data recieved but failed to render:", response.data)
+                setSnackbarOpen(true);
+            }
+            
         } catch (error) {
             console.log(error)
             if (error.response) {
                 setErrorMessage(error.response.data.error);
                 if (error.response.data.content) {
-                    console.log('Content from OpenAI:', error.response.data.content);
+                    console.log('Content from GPT:', error.response.data.content);
                 }
             } else {
                 setErrorMessage(error.message);
@@ -95,7 +102,6 @@ function MainPage() {
             )}
             <Snackbar
                 open={snackbarOpen}
-                autoHideDuration={6000}
                 onClose={handleCloseSnackbar}
                 message={errorMessage}
                 action={[

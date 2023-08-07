@@ -39,3 +39,15 @@ func ConnectDB() (*gorm.DB, error) {
 	DB.AutoMigrate(&models.Playlist{}, &models.Movie{})
 	return DB, nil
 }
+
+func CloseDB() {
+	db, err := DB.DB()
+	if err != nil {
+		fmt.Printf("Error while getting underlying db from GORM: %v", err)
+		return // Exit the function if there's an error
+	}
+	err = db.Close()
+	if err != nil {
+		fmt.Printf("Error while closing the database connection: %v", err)
+	}
+}

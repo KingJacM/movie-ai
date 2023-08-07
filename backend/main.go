@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"movie-recommendations/db"
 	"movie-recommendations/handlers"
 
 	"github.com/gin-contrib/cors"
@@ -10,6 +12,11 @@ import (
 func main() {
 	r := gin.Default()
 
+	_, err := db.ConnectDB()
+	if err != nil {
+		fmt.Printf("Failed to initialize database: %v", err)
+	}
+	defer db.CloseDB()
 	config := cors.DefaultConfig()
 	config.AllowAllOrigins = true                            // Allow all origins
 	config.AllowMethods = []string{"GET", "POST"}            // Specify what methods should be allowed

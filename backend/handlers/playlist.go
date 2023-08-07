@@ -23,11 +23,11 @@ func CreatePlaylist(c *gin.Context) {
 	}
 
 	// Connect to the database
-	dbConn, err := db.ConnectDB()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not connect to the database"})
-		return
-	}
+	// dbConn, err := db.ConnectDB()
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not connect to the database"})
+	// 	return
+	// }
 
 	// Create playlist
 	playlist := models.Playlist{
@@ -35,36 +35,36 @@ func CreatePlaylist(c *gin.Context) {
 		Movies: req.Movies,
 	}
 
-	dbConn.Create(&playlist)
+	db.DB.Create(&playlist)
 
 	c.JSON(http.StatusCreated, gin.H{"data": playlist})
 }
 
 func GetPlaylists(c *gin.Context) {
 	// Connect to the database
-	dbConn, err := db.ConnectDB()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not connect to the database"})
-		return
-	}
+	// dbConn, err := db.ConnectDB()
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not connect to the database"})
+	// 	return
+	// }
 
 	var playlists []models.Playlist
-	dbConn.Preload("Movies").Find(&playlists)
+	db.DB.Preload("Movies").Find(&playlists)
 
 	c.JSON(http.StatusOK, gin.H{"data": playlists})
 }
 
 func GetSinglePlaylist(c *gin.Context) {
 	// Connect to the database
-	dbConn, err := db.ConnectDB()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not connect to the database"})
-		return
-	}
+	// dbConn, err := db.ConnectDB()
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not connect to the database"})
+	// 	return
+	// }
 
 	var playlist models.Playlist
 	id := c.Param("id")
 
-	dbConn.Preload("Movies").First(&playlist, id)
+	db.DB.Preload("Movies").First(&playlist, id)
 	c.JSON(http.StatusOK, gin.H{"data": playlist})
 }
