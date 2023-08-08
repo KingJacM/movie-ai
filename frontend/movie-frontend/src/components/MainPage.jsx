@@ -12,6 +12,8 @@ function MainPage() {
     const [shared, setShared] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [successOpen, setSuccessOpen] = useState(false);
+    const [isSharing, setIsSharing] = useState(false);
 
     const handleInputChange = (event) => {
         setPromptValue(event.target.value);
@@ -60,11 +62,14 @@ function MainPage() {
 
     const handleSharePlaylist = async () => {
         try {
+            setIsSharing(true);
             setShared(true)
             const response = await axios.post('https://ai-movie-recommendation-app.azurewebsites.net/api/playlists', { name: promptValue, movies });
             if (response.data.error) {
                 throw new Error(response.data.error);
             }
+            setSuccessOpen(true);
+            setTimeout(() => setSuccessOpen(false), 6000);
         } catch (error) {
             if (error.response) {
                 setErrorMessage(error.response.data.error);
@@ -73,6 +78,8 @@ function MainPage() {
             }
             setShared(false)
             setSnackbarOpen(true); // Show the Snackbar when there's an error
+        }finally {
+            setIsSharing(false); // Ensure we set loading to false regardless of success or error
         }
     };
 
@@ -93,7 +100,7 @@ function MainPage() {
             </Prompt>
             {(movies != null && movies.length != 0) &&
             <Button style={{ marginTop:"20px"}}variant="contained" color="primary" onClick={handleSharePlaylist} disabled={shared || isLoading}>
-                Share your playlist
+                {isSharing ? <CircularProgress size={24} /> : 'Share your playlist'}
             </Button>}
             {isLoading ? (
                 <div style={{ marginTop:"20px", display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
@@ -123,6 +130,21 @@ function MainPage() {
                     horizontal: 'center',
                 }}
             />
+            <Snackbar
+                open={successOpen}
+                onClose={() => setSuccessOpen(false)}
+                message="Playlist successfully shared!"
+                action={[
+                    <Button color="secondary" size="small" onClick={() => setSuccessOpen(false)}>
+                        Close
+                    </Button>
+                ]}
+                anchorOrigin={{
+                    vertical: 'top',
+                    horizontal: 'center',
+                }}
+            />
+
         </div>
     );
 }
