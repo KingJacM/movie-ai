@@ -28,6 +28,7 @@ function MainPage() {
             try{
                 if(response.data.movies != null){
                     setMovies(response.data.movies);
+                    setShared(false)
                 }else{
                     setErrorMessage("Data recieved, but is empty")
                     setSnackbarOpen(true);

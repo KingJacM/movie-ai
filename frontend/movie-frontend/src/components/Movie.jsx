@@ -4,12 +4,12 @@ import { Card, CardContent, Typography, Button, CardMedia } from '@material-ui/c
 function Movie({ movie }) {
   return (
     <Card  style={{ marginBottom: '20px', boxShadow: '0 3px 10px rgb(0 0 0 / 0.2)' }}>
-      {movie.ImageLink && (
+      {movie.imageLink && (
         <CardMedia
           component="img"
           alt={movie.title}
           height="140"
-          image={movie.ImageLink}
+          image={movie.imageLink}
           title={movie.title}
         />
       )}
