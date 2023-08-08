@@ -1,9 +1,18 @@
 import React from 'react';
-import { Card, CardContent, Typography, Button } from '@material-ui/core';
+import { Card, CardContent, Typography, Button, CardMedia } from '@material-ui/core';
 
 function Movie({ movie }) {
   return (
-    <Card style={{ marginBottom: '20px' }}>
+    <Card  style={{ marginBottom: '20px', boxShadow: '0 3px 10px rgb(0 0 0 / 0.2)' }}>
+      {movie.ImageLink && (
+        <CardMedia
+          component="img"
+          alt={movie.title}
+          height="140"
+          image={movie.ImageLink}
+          title={movie.title}
+        />
+      )}
       <CardContent>
         <Typography variant="h5" component="h2">
           {movie.title}
@@ -13,13 +22,13 @@ function Movie({ movie }) {
         </Typography>
         <Button 
           variant="contained" 
-          color="primary" 
+          color="secondary" 
           href={movie.link} 
           target="_blank" 
           rel="noopener noreferrer"
           style={{ marginTop: '10px' }}
         >
-          More Info
+          more info
         </Button>
       </CardContent>
     </Card>

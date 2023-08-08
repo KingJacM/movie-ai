@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -16,6 +17,11 @@ type Movie struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	Link        string `json:"link"`
+	ImageLink   string `json:"imageLink,omitempty"` // new field
+}
+
+type OMDbResponse struct {
+	Poster string `json:"Poster"`
 }
 
 type MovieResponse struct {
@@ -34,6 +40,26 @@ type OpenAIResponse struct {
 	} `json:"choices"`
 }
 
+func fetchPoster(title string, apiKey string) (string, error) {
+	resp, err := http.Get(fmt.Sprintf("http://www.omdbapi.com/?t=%s&apikey=%s", title, apiKey))
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	var omdbResp OMDbResponse
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	err = json.Unmarshal(body, &omdbResp)
+	if err != nil {
+		return "", err
+	}
+
+	return omdbResp.Poster, nil
+}
+
 func GetRecommendations(c *gin.Context) {
 	var request RecommendationRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -42,7 +68,7 @@ func GetRecommendations(c *gin.Context) {
 		return
 	}
 
-	request.Prompt += ". Please provide 9 recommendations in the list of json format, 'movies': [objects], in which each object has: 'title: movie title, description: movie description with reason why it matches my request, link: movie link'. Do not return anything else other than json an do not return in code snippet)"
+	request.Prompt += ". Please provide 9 recommendations in json format of {'movies': [objects]}, in which each object has: 'title: movie title, description: movie description with reason why it matches my request, link: movie link'. Do not return anything else other than json in the form of {'movies': [objects]} an do not return in code snippet)"
 
 	reqBody := map[string]interface{}{
 		"model": "gpt-3.5-turbo",
@@ -118,6 +144,41 @@ func GetRecommendations(c *gin.Context) {
 		fmt.Printf("%v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error parsing movie data. It could be because GPT has returned unexpected content, please try again or see console for more details", "content": aiResp.Choices})
 		return
+	}
+
+	// Fetch movie posters for each movie concurrently
+	omdbApiKey := "b656f347"
+	var wg sync.WaitGroup
+	results := make(chan struct {
+		index int
+		url   string
+	}, len(movieResponse.Movies))
+
+	for i, movie := range movieResponse.Movies {
+		wg.Add(1)
+		go func(i int, title string) {
+			defer wg.Done()
+
+			posterURL, err := fetchPoster(title, omdbApiKey)
+			if err != nil {
+				fmt.Printf("Error fetching poster for %s: %v", title, err)
+				return
+			}
+			results <- struct {
+				index int
+				url   string
+			}{i, posterURL}
+		}(i, movie.Title)
+	}
+
+	// Wait for all goroutines to finish
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	for res := range results {
+		movieResponse.Movies[res.index].ImageLink = res.url
 	}
 
 	c.JSON(http.StatusOK, movieResponse)

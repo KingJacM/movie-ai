@@ -26,7 +26,14 @@ function MainPage() {
                 throw new Error(response.data.error);
             }
             try{
-                setMovies(response.data.movies);
+                if(response.data.movies != null){
+                    setMovies(response.data.movies);
+                }else{
+                    setErrorMessage("Data recieved, but is empty")
+                    setSnackbarOpen(true);
+                }
+                
+
             } catch{
                 setErrorMessage("Data recieved but failed to render");
                 console.log("Data recieved but failed to render:", response.data)
@@ -63,6 +70,7 @@ function MainPage() {
             } else {
                 setErrorMessage(error.message);
             }
+            setShared(false)
             setSnackbarOpen(true); // Show the Snackbar when there's an error
         }
     };
@@ -82,8 +90,8 @@ function MainPage() {
             <Suggestion onSuggestionClick={handleSuggestionClick} disabled={isLoading} />
             <Prompt onSubmit={handlePromptSubmit} disabled={isLoading} inputValue={promptValue} onInputChange={handleInputChange} >
             </Prompt>
-            {movies.length !== 0 &&
-            <Button variant="contained" color="primary" onClick={handleSharePlaylist} disabled={shared || isLoading}>
+            {(movies != null && movies.length != 0) &&
+            <Button style={{ marginTop:"20px"}}variant="contained" color="primary" onClick={handleSharePlaylist} disabled={shared || isLoading}>
                 Share your playlist
             </Button>}
             {isLoading ? (

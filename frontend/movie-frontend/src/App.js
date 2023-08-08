@@ -5,9 +5,26 @@ import { CssBaseline, Container, AppBar, Toolbar, Typography, Button } from '@ma
 import MainPage from './components/MainPage';
 import PlaylistPage from './components/PlaylistPage';
 import PlaylistDetailPage from './components/PlaylistDetailPage';
+import { createTheme, ThemeProvider } from '@material-ui/core/styles';
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#1976d2',
+    },
+    secondary: {
+      main: '#f44336',
+    },
+  },
+  typography: {
+    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    fontSize: 14,
+  },
+});
 
 function App() {
   return (
+    <ThemeProvider theme={theme}>
     <Router>
       <div>
         <CssBaseline />
@@ -29,6 +46,7 @@ function App() {
         </Container>
       </div>
     </Router>
+    </ThemeProvider>
   );
 }
 
