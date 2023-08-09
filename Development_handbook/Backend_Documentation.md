@@ -436,7 +436,142 @@ Access backend logs in log stream
 
 Access the deployment status in Deployment Center, note that sometimes new Tag will not be automatically used.
 
-![](assets/20230809_160735_image.png)
+![img](assets/20230809_160735_image.png)
+
+##### Fetch Movie poster
+
+https://github.com/KingJacM/movie-ai/commit/bdc56ab7c3bc5cc2fae2d9e9b1bb6f0bd8a4c6b4#diff-9b4a3a8c61fe54c18cbf7aec5da3fc260622678bf63502b3cf9b9c7d4e71305a
+
+```go
+var wg sync.WaitGroup
+results := make(chan struct {
+	index int
+	url   string
+}, len(movieResponse.Movies))
+
+for i, movie := range movieResponse.Movies {
+	wg.Add(1)
+	go func(i int, title string) {
+		defer wg.Done()
+
+		posterURL, err := fetchPoster(title, omdbApiKey)
+		if err != nil {
+			fmt.Printf("Error fetching poster for %s: %v", title, err)
+			return
+		}
+		results <- struct {
+			index int
+			url   string
+		}{i, posterURL}
+	}(i, movie.Title)
+}
+
+// Wait for all goroutines to finish
+go func() {
+	wg.Wait()
+	close(results)
+}()
+
+for res := range results {
+	movieResponse.Movies[res.index].ImageLink = res.url
+}
+```
+
+1. **Initialization**
+
+   ```go
+   var wg sync.WaitGroup
+   ```
+
+   This line initializes a `WaitGroup`. A `WaitGroup` is used to wait for a collection of goroutines to finish executing.
+2. **Channel Creation**
+
+   ```go
+   results := make(chan struct {
+       index int
+       url   string
+   }, len(movieResponse.Movies))
+   ```
+
+   Here, a Go channel named `results` is created. This channel can transmit data of a specific type, which is a struct containing an `index` of type `int` and a `url` of type `string`. The capacity of the channel is set to the number of movies in `movieResponse.Movies`, which means it can hold that many messages without blocking.
+3. **Loop through Movies**
+
+   ```go
+   for i, movie := range movieResponse.Movies {
+   ```
+
+   This begins a loop iterating through each movie in `movieResponse.Movies`.
+4. **Increment the WaitGroup Counter**
+
+   ```go
+       wg.Add(1)
+   ```
+
+   Here, `wg.Add(1)` is called to increment the counter inside the WaitGroup by 1 for each movie. This indicates one more task the WaitGroup should wait for.
+5. **Launch Goroutine for Each Movie**
+
+   ```go
+       go func(i int, title string) {
+   ```
+
+   This starts a new goroutine (a lightweight thread) to execute a function concurrently. This function will be responsible for fetching a poster based on the movie's title.
+6. **Decrement the WaitGroup Counter on Completion**
+
+   ```go
+           defer wg.Done()
+   ```
+
+   The `defer` keyword ensures that `wg.Done()` will be called after the function finishes, reducing the WaitGroup's counter by 1.
+7. **Fetch Poster and Handle Error**
+
+   ```go
+           posterURL, err := fetchPoster(title, omdbApiKey)
+           if err != nil {
+               fmt.Printf("Error fetching poster for %s: %v", title, err)
+               return
+           }
+   ```
+
+   This attempts to fetch the poster URL for a given movie title. If there's an error, it prints an error message and exits the goroutine.
+8. **Send Result to the Channel**
+
+   ```go
+           results <- struct {
+               index int
+               url   string
+           }{i, posterURL}
+   ```
+
+   If successful, the goroutine sends the fetched poster URL and the index of the movie to the `results` channel.
+9. **Goroutine Closure**
+
+   ```go
+       }(i, movie.Title)
+   ```
+
+   This line closes the definition of the goroutine and immediately invokes it with the current movie's index and title.
+10. **Close the Results Channel After All Goroutines Finish**
+
+    ```go
+    go func() {
+        wg.Wait()
+        close(results)
+    }()
+    ```
+
+    This starts another goroutine to wait for all the previously launched goroutines to finish (using `wg.Wait()`) and then closes the `results` channel. This is important because a closed channel signals to receivers that no more data will be sent on the channel.
+11. **Consume the Results from the Channel**
+
+    ```go
+    for res := range results {
+        movieResponse.Movies[res.index].ImageLink = res.url
+    }
+    ```
+
+    Here, the main thread ranges over the `results` channel, consuming each result as it arrives. As each result is processed, the corresponding movie's `ImageLink` field in `movieResponse.Movies` is updated with the poster URL.
+
+This code demonstrates the power and elegance of Go's concurrency model, using goroutines to concurrently fetch movie posters and channels to safely communicate between those goroutines and the main thread.
+
 
 ## 4. Features and Endpoints
 
