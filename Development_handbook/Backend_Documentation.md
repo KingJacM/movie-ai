@@ -260,12 +260,12 @@ When deploying, it is foten provided a connection string, and when it doesn't ma
 Close DB connection and initialize global reference of DB:
 
 ```go
-var DB *gorm.DB
+	var DB *gorm.DB
 func CloseDB() {
 	db, err := DB.DB() //get the underlying database connection from the database object.
 	if err ...
 	err = db.Close()
-	if err ...
+	if errs ...
 }
 ```
 
@@ -278,6 +278,10 @@ if err != nil {
 }
 defer db.CloseDB()
 ```
+
+##### ElepantSQL
+
+![1691597782003](image/Backend_Documentation/1691597782003.png)Use the URL to connect to DB, the migration part of the code should handle the creation of tables.
 
 ##### Playlist endpoints
 
@@ -374,7 +378,6 @@ These changes ensure that the binary file is properly built and located in the e
 
 ### Deployment
 
-
 ![](assets/20230809_155150_image.png)
 
 ##### 1. Set up Resource Group
@@ -434,7 +437,6 @@ Access backend logs in log stream
 Access the deployment status in Deployment Center, note that sometimes new Tag will not be automatically used.
 
 ![](assets/20230809_160735_image.png)
-
 
 ## 4. Features and Endpoints
 

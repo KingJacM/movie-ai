@@ -10,15 +10,12 @@ import { createTheme, ThemeProvider } from '@material-ui/core/styles';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#1976d2',
+      main: '#4C4C6D',  // Almost black (like a classic movie theater curtain)
     },
     secondary: {
-      main: '#f44336',
+      main: '#FFD700',  // Golden (like an Oscar statue)
     },
-  },
-  typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-    fontSize: 14,
+    
   },
 });
 
@@ -30,9 +27,9 @@ function App() {
         <CssBaseline />
         <AppBar position="static">
           <Toolbar>
-            <Typography variant="h6" style={{ flexGrow: 1 }}>
-              PopcornAI - Movie Recommendation
-            </Typography>
+              <div style={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
+                <img style={{ height: "40px" }} src="movie-logo.png" alt="Movie Logo" />
+              </div>
             <Button color="inherit" component={Link} to="/">Home</Button>
             <Button color="inherit" component={Link} to="/playlists">Playlists</Button>
           </Toolbar>
